@@ -1,7 +1,8 @@
 import pygame
 import os
 from gameplay.battle import Battle
-from gameplay.levels import Level  # Combined Level class
+from gameplay.levels import Level
+from managers.save_manager import SaveManager
 
 class Levels:
     def __init__(self, script_dir):
@@ -14,6 +15,7 @@ class Levels:
         self.hero_type = None
         self.audio_manager = None
         self.game_instance = None
+        self.save_manager = SaveManager()
         self.load_levels()
 
     def load_levels(self):
@@ -79,6 +81,14 @@ class Levels:
         self.hero_type = hero_type
         self.audio_manager = audio_manager
         self.game_instance = game_instance
+
+        # Load saved levels if user is logged in
+        if game_instance and hasattr(game_instance, 'is_user_logged_in') and game_instance.is_user_logged_in():
+            progress = self.save_manager.load_progress()
+            if progress:
+                # Unlock all levels up to the saved level
+                for level_id in range(1, progress['level'] + 1):
+                    self.unlock_level(level_id)
 
     def get_level_by_id(self, level_id):
         """Get a level by its ID."""
@@ -155,6 +165,14 @@ class Levels:
                 next_level_id = self.active_level + 1
                 if next_level_id <= 20:
                     self.unlock_level(next_level_id)
+
+                    # Save progress if game_instance exists and user is logged in
+                    if self.game_instance and hasattr(self.game_instance,
+                                                      'is_user_logged_in') and self.game_instance.is_user_logged_in():
+                        # Save the completed level and hero type
+                        print(f"Saving progress: Level {next_level_id}, Hero: {self.hero_type}")
+                        self.save_manager.save_progress(next_level_id, self.hero_type)
+
                 if on_enter:
                     on_enter(self.active_level, victory=True)
             else:

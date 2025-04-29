@@ -2,6 +2,7 @@ import pygame
 import os
 from ui.button import Button
 from .back_button import BackButton
+from managers.save_manager import SaveManager
 
 class GameModes:
     def __init__(self, screen, audio_manager, script_dir, scale=0.5, game_instance=None, auth_manager=None):
@@ -12,8 +13,8 @@ class GameModes:
         self.scale = scale  # Scaling factor for buttons
         self.show_new_continue = False  # Controls New/Continue selection
         self.auth_manager = auth_manager
-        current_user = self.auth_manager.get_current_user()
-        print(f"[DEBUG] AuthManager passed: {self.auth_manager}")
+        self.save_manager = SaveManager()
+        current_user = self.auth_manager.get_current_user() if self.auth_manager else None
 
         # Specific scales for border and new/continue buttons
         self.border_scale = 0.5  # Customize this value for the border
@@ -43,18 +44,36 @@ class GameModes:
         self.new_continue_border_rect = self.new_continue_border.get_rect(center=(960, 540))
 
         # Create new/continue buttons with custom scaling
-        self.new_button = self.create_button(script_dir, "new", (905, 480), action=self.start_new_game, button_scale=self.new_continue_scale)
-        self.continue_button = self.create_button(script_dir, "continue", (905, 600), action=self.continue_game, button_scale=self.new_continue_scale)
+        self.new_button = self.create_button(script_dir, "new", (905, 480), action=self.start_new_game,button_scale=self.new_continue_scale)
+
+        # Load continue button images (normal, hover, locked)
+        continue_img_path = os.path.join(script_dir, "assets", "images", "buttons", "game modes", "new or continue","continue_btn_img.png")
+        continue_hover_path = os.path.join(script_dir, "assets", "images", "buttons", "game modes", "new or continue","continue_btn_hover.png")
+        continue_locked_path = os.path.join(script_dir, "assets", "images", "buttons", "game modes", "new or continue","continue_btn_locked.png")
+
+        # Create continue button (will be updated based on saved progress)
+        self.continue_button = Button(
+            905, 600, continue_img_path, continue_hover_path,
+            action=self.continue_game, scale=self.new_continue_scale,
+            audio_manager=self.audio_manager
+        )
+
+        # Store locked button image
+        self.continue_locked_img = pygame.image.load(continue_locked_path)
+        original_size = self.continue_locked_img.get_rect().size
+        scaled_width = int(original_size[0] * self.new_continue_scale)
+        scaled_height = int(original_size[1] * self.new_continue_scale)
+        self.continue_locked_img = pygame.transform.scale(self.continue_locked_img, (scaled_width, scaled_height))
 
         # Add Back button
-        self.back_button = BackButton(self.screen, script_dir, self.go_back, audio_manager=self.audio_manager, position=(100, 100), scale=0.25)
+        self.back_button = BackButton(self.screen, script_dir, self.go_back, audio_manager=self.audio_manager,position=(100, 100), scale=0.25)
 
     def play_single_player(self):
         if not self.auth_manager:  # Check if auth_manager is available
             print("DEBUG: AuthManager is not initialized.")
             return
 
-        current_user = self.auth_manager.get_current_user()  # Get the current user
+        current_user = self.auth_manager.get_current_user()
 
         if not current_user:
             print("DEBUG: No user is logged in. Please log in first.")
@@ -62,8 +81,23 @@ class GameModes:
 
         print(f"Playing single-player mode as {current_user}")
         self.show_new_continue = True  # Show new/continue prompt
+
+        has_progress = self.save_manager.has_saved_progress()
+        self.update_continue_button(has_progress)
+
         for button in self.buttons.values():
             button.active = False  # Disable background buttons when prompt is active
+
+    def update_continue_button(self, has_progress):
+        """Update the continue button based on whether the user has saved progress"""
+        if has_progress:
+            # Enable continue button
+            self.continue_button.active = True
+        else:
+            # Disable continue button and use locked image
+            self.continue_button.active = False
+            self.continue_button.original_img = self.continue_locked_img
+            self.continue_button.image = self.continue_locked_img
 
     def play_pvp(self):
         print("Playing player-vs-player mode")
@@ -103,10 +137,45 @@ class GameModes:
                 self.game_instance.game_instance.hero_selection.show()
 
     def continue_game(self):
+        """Continue previous game if progress exists"""
+        if not self.continue_button.active:
+            print("Continue button is locked - no saved progress")
+            return
+
         print("Continuing previous game...")
         self.show_new_continue = False
-        for button in self.buttons.values():
-            button.active = True  # Re-enable buttons when leaving prompt
+
+        # Load saved progress
+        progress = self.save_manager.load_progress()
+        if progress and self.game_instance:
+            print(f"Loading saved progress: Level {progress['level']}, Hero: {progress['hero_type']}")
+
+            # Set the selected hero in game instance
+            self.game_instance.selected_hero = progress['hero_type']
+
+            # Unlock levels up to the saved level
+            if hasattr(self.game_instance, 'lspu_map'):
+                if self.game_instance.lspu_map is None:
+                    # Map hasn't been created yet, will handle it when loading the map
+                    pass
+
+            # Re-enable buttons when leaving prompt
+            for button in self.buttons.values():
+                button.active = True
+
+            # Get hero's OST path
+            hero_ost_path = os.path.join(self.game_instance.script_dir, "assets", "audio", "ost",
+                                         progress['hero_type'], f"{progress['hero_type']}_map_ost.mp3")
+
+            # Load the map directly with the saved hero
+            self.game_instance.map(hero_ost_path)
+
+            # After the map loads, unlock levels up to the saved level
+            if hasattr(self.game_instance, 'lspu_map') and self.game_instance.lspu_map:
+                for level_id in range(1, progress['level'] + 1):
+                    self.game_instance.lspu_map.levels.unlock_level(level_id)
+        else:
+            print("No saved progress found")
 
     def create_button(self, script_dir, name, position, action=None, button_scale=None):
         """Helper method to create buttons with scaling."""
@@ -115,10 +184,8 @@ class GameModes:
 
         folder = "new or continue" if name in ["new", "continue"] else "modes"
         img_path = os.path.join(script_dir, "assets", "images", "buttons", "game modes", folder, f"{name}_btn_img.png")
-        hover_path = os.path.join(script_dir, "assets", "images", "buttons", "game modes", folder,
-                                  f"{name}_btn_hover.png")
-        click_path = None if folder == "modes" else os.path.join(script_dir, "assets", "images", "buttons",
-                                                                 "game modes", folder, f"{name}_btn_click.png")
+        hover_path = os.path.join(script_dir, "assets", "images", "buttons", "game modes", folder, f"{name}_btn_hover.png")
+        click_path = None if folder == "modes" else os.path.join(script_dir, "assets", "images", "buttons", "game modes", folder, f"{name}_btn_click.png")
 
         return Button(
             position[0], position[1], img_path, hover_path, click_path,
@@ -155,7 +222,9 @@ class GameModes:
             # Only update back button and active prompt buttons when new/continue is shown
             if self.show_new_continue:
                 self.new_button.update(event)
-                self.continue_button.update(event)
+                # Only update continue button if it's active (if there's saved progress)
+                if self.continue_button.active:
+                    self.continue_button.update(event)
                 self.back_button.update(event)
             else:
                 # Update all buttons when not showing new/continue
@@ -173,6 +242,8 @@ class GameModes:
             if self.show_new_continue:
                 self.screen.blit(self.new_continue_border, self.new_continue_border_rect.topleft)
                 self.new_button.draw(self.screen)
+
+                # Always draw continue button, but it will look different if disabled
                 self.continue_button.draw(self.screen)
 
             # Always draw the back button on top

@@ -5,8 +5,10 @@ import random
 from .button import Button
 from .back_button import BackButton
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
+from managers.save_manager import SaveManager
 
 CONFIRMATION_DELAY = pygame.USEREVENT + 1
+
 
 class HeroSelection:
     def __init__(self, game_instance, background_menu):
@@ -16,9 +18,11 @@ class HeroSelection:
         self.visible = False  # Hero selection starts hidden
         self.background_menu = background_menu
         self.audio_manager = game_instance.audio_manager
+        self.save_manager = SaveManager()  # Initialize the SaveManager
 
         # Load background border
-        border_path = os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection", "choose_hero_border.png")
+        border_path = os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes",
+                                   "hero selection", "choose_hero_border.png")
         self.border_img = pygame.image.load(border_path)
         self.border_rect = self.border_img.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
 
@@ -47,10 +51,12 @@ class HeroSelection:
         # Load hero voicelines
         self.voicelines = {
             "boy": [
-                os.path.join(game_instance.script_dir, "assets", "audio", "voiceline", "boy", "hero selection", f"boy_voice_{i}.mp3") for i in range(1, 4)
+                os.path.join(game_instance.script_dir, "assets", "audio", "voiceline", "boy", "hero selection",
+                             f"boy_voice_{i}.mp3") for i in range(1, 4)
             ],
             "girl": [
-                os.path.join(game_instance.script_dir, "assets", "audio", "voiceline", "girl", "hero selection", f"girl_voice_{i}.mp3") for i in range(1, 4)
+                os.path.join(game_instance.script_dir, "assets", "audio", "voiceline", "girl", "hero selection",
+                             f"girl_voice_{i}.mp3") for i in range(1, 4)
             ]
         }
 
@@ -59,15 +65,18 @@ class HeroSelection:
         self.temp_selected_hero = None
 
         # Load confirmation border with scaling
-        confirmation_border_path = os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection", "yes_or_no_border.png")
+        confirmation_border_path = os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes",
+                                                "hero selection", "yes_or_no_border.png")
         self.confirmation_border_original = pygame.image.load(confirmation_border_path)
 
         # Apply scaling to confirmation border
         border_scale = 0.7
         border_width = int(self.confirmation_border_original.get_width() * border_scale)
         border_height = int(self.confirmation_border_original.get_height() * border_scale)
-        self.confirmation_border = pygame.transform.scale(self.confirmation_border_original,(border_width, border_height))
-        self.confirmation_border_rect = self.confirmation_border.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        self.confirmation_border = pygame.transform.scale(self.confirmation_border_original,
+                                                          (border_width, border_height))
+        self.confirmation_border_rect = self.confirmation_border.get_rect(
+            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
 
         # Create Yes/No buttons with appropriate scaling
         yes_btn_position = (self.confirmation_border_rect.centerx - 200, self.confirmation_border_rect.centery + 150)
@@ -77,8 +86,10 @@ class HeroSelection:
 
         self.yes_button = Button(
             yes_btn_position[0], yes_btn_position[1],
-            os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection", "yes_btn_img.png"),
-            os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection", "yes_btn_hover.png"),
+            os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection",
+                         "yes_btn_img.png"),
+            os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection",
+                         "yes_btn_hover.png"),
             action=self.confirm_hero_selection,
             scale=button_scale,
             audio_manager=self.game_instance.audio_manager
@@ -86,8 +97,10 @@ class HeroSelection:
 
         self.no_button = Button(
             no_btn_position[0], no_btn_position[1],
-            os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection", "no_btn_img.png"),
-            os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection", "no_btn_hover.png"),
+            os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection",
+                         "no_btn_img.png"),
+            os.path.join(game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection",
+                         "no_btn_hover.png"),
             action=self.cancel_hero_selection,
             scale=button_scale,
             audio_manager=self.game_instance.audio_manager
@@ -99,7 +112,8 @@ class HeroSelection:
 
     def create_button(self, name, position, scale=1.0, freeze_duration=0):
         """Helper to create buttons with optional freeze duration."""
-        base_path = os.path.join(self.game_instance.script_dir, "assets", "images", "buttons", "game modes", "hero selection")
+        base_path = os.path.join(self.game_instance.script_dir, "assets", "images", "buttons", "game modes",
+                                 "hero selection")
         return Button(
             position[0], position[1],
             os.path.join(base_path, f"{name}_hero_border_img.png"),
@@ -154,6 +168,21 @@ class HeroSelection:
         self.game_instance.selected_hero = self.selected_hero  # ✅ Store hero in game instance
         self.confirmation_active = False
 
+        # Save the hero selection to the database if a user is logged in
+        if self.game_instance.is_user_logged_in():
+            # Get current level progress or default to level 1
+            progress = self.save_manager.load_progress()
+            current_level = progress['level'] if progress else 1
+
+            # Save hero selection with current level
+            save_result = self.save_manager.save_progress(current_level, self.selected_hero)
+            if save_result:
+                print(f"Hero selection {self.selected_hero} saved successfully")
+            else:
+                print("Failed to save hero selection")
+        else:
+            print("User not logged in - hero selection not saved")
+
         # Visual feedback - show selected hero for 3 seconds
         self.selection_time = time.time()
 
@@ -165,7 +194,8 @@ class HeroSelection:
             pygame.display.update()
 
         # Select the hero's OST based on selection
-        hero_ost_path = os.path.join(self.game_instance.script_dir, "assets", "audio", "ost", self.selected_hero, f"{self.selected_hero}_map_ost.mp3")
+        hero_ost_path = os.path.join(self.game_instance.script_dir, "assets", "audio", "ost", self.selected_hero,
+                                     f"{self.selected_hero}_map_ost.mp3")
 
         # Proceed after freeze
         print(f"Loading map with {self.selected_hero.upper()} as the hero!")
