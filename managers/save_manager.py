@@ -1,6 +1,7 @@
 import mysql.connector
 from managers.auth_manager import AuthManager
 
+
 class SaveManager:
     _instance = None
 
@@ -172,6 +173,48 @@ class SaveManager:
                 return False
         except Exception as e:
             print(f"Save Manager: Error updating level: {e}")
+            return False
+
+    def reset_progress(self):
+        """Reset the player's progress to level 1"""
+        current_user = self.auth_manager.get_current_user()
+        if not current_user:
+            print("Save Manager: No user logged in, cannot reset progress")
+            return False
+
+        try:
+            conn = mysql.connector.connect(**self.conn_params)
+            cursor = conn.cursor()
+
+            # Check if the user has existing progress
+            cursor.execute(
+                "SELECT hero_type FROM game_progress WHERE user_id = %s",
+                (current_user["id"],)
+            )
+            result = cursor.fetchone()
+
+            if result:
+                # Get the current hero_type to maintain it
+                hero_type = result[0]
+
+                # Reset the level to 1 but keep the same hero_type
+                cursor.execute(
+                    "UPDATE game_progress SET current_level = 1 WHERE user_id = %s",
+                    (current_user["id"],)
+                )
+                conn.commit()
+                cursor.close()
+                conn.close()
+                print(f"Save Manager: Progress reset to level 1 for user {current_user['id']}")
+                return True
+            else:
+                # No progress to reset
+                cursor.close()
+                conn.close()
+                print("Save Manager: No existing progress found to reset")
+                return False
+        except Exception as e:
+            print(f"Save Manager: Error resetting progress: {e}")
             return False
 
     def reset_game_state(self):
