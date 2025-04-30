@@ -101,7 +101,7 @@ class CustomUI:
             self.x_button_hover_img = pygame.image.load(x_button_hover_path).convert_alpha()
         except:
             # Create a fallback X button if images don't exist
-            print("X button images not found, creating fallback buttons")
+            # print("X button images not found, creating fallback buttons")
             # Create a red X button as fallback
             self.x_button_img = self.create_x_button((255, 0, 0))
             self.x_button_hover_img = self.create_x_button((255, 100, 100))
