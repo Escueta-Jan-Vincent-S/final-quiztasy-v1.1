@@ -9,13 +9,13 @@ class Level:
         level_settings = {
             1: {"name": "Level 1", "description": "Basta Level 1", "enemy_hp": 5, "enemy_damage": 1,
                 "question_difficulty": 1, "timer_seconds": 10},
-            2: {"name": "Level 2", "description": "Basta Level 2", "enemy_hp": 6, "enemy_damage": 1.5,
+            2: {"name": "Level 2", "description": "Basta Level 2", "enemy_hp": 6, "enemy_damage": 1,
                 "question_difficulty": 1, "timer_seconds": 10},
-            3: {"name": "Level 3", "description": "Basta Level 3", "enemy_hp": 7, "enemy_damage": 2,
+            3: {"name": "Level 3", "description": "Basta Level 3", "enemy_hp": 7, "enemy_damage": 1,
                 "question_difficulty": 1, "timer_seconds": 10},
-            4: {"name": "Level 4", "description": "Basta Level 4", "enemy_hp": 8, "enemy_damage": 2.5,
+            4: {"name": "Level 4", "description": "Basta Level 4", "enemy_hp": 8, "enemy_damage": 1,
                 "question_difficulty": 1, "timer_seconds": 10},
-            5: {"name": "Level 5", "description": "Basta Level 5", "enemy_hp": 9, "enemy_damage": 3,
+            5: {"name": "Level 5", "description": "Basta Level 5", "enemy_hp": 9, "enemy_damage": 1,
                 "question_difficulty": 1, "timer_seconds": 10},
         }
 

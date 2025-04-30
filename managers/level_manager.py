@@ -157,9 +157,7 @@ class Levels:
                 self.audio_manager,
                 game_instance=self.game_instance
             )
-
             victory = battle.run()
-
             if victory:
                 print(f"Victory! Level {self.active_level} completed.")
                 next_level_id = self.active_level + 1
