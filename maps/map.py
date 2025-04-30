@@ -5,6 +5,7 @@ from ui.back_button import BackButton
 from ui.button import Button
 from .map_character_movement import MapCharacterMovement
 from .map_collision import MapCollisionHandler
+from .map_collision_setup import MapCollisionSetup
 from managers.level_manager import Levels
 
 class Map:
@@ -101,26 +102,7 @@ class Map:
         self.enter_button = Button(x=x, y=y, idle_img=idle_img, hover_img=hover_img, action=self.levels_manager.enter_level, scale=0.5, audio_manager=self.audio_manager)
 
     def setup_map_collision_barriers(self):
-        """Set up collision barriers for the map."""
-        # Set character collision radius - adjust as needed based on your character size
-        self.collision_handler.set_character_collision_radius(50)
-
-        # Paths/roads boundaries
-        # Highway
-        self.collision_handler.add_line((1760, 300), (1760, 7500)) # V-Left Highway
-        self.collision_handler.add_line((2210, 300), (2210, 1020)) # V-Cutted Upper Right Highway
-        self.collision_handler.add_line((2210, 1940), (2210, 7500))  # V-Cutted Lower Right Highway
-        self.collision_handler.add_line((1760, 300), (2210, 300))  # H-Close Upper Highway
-        self.collision_handler.add_line((1760, 7500), (2210, 7500)) # H-Close Lower Highway
-        # Entrance
-        self.collision_handler.add_rectangle((2345, 1586.3), 750, 10)  # Garden Part Rectangle
-        self.collision_handler.add_line((2210, 1020), (2430, 1020)) # Car to Garden to Gate
-        self.collision_handler.add_line((2430, 1020), (2430, 1200)) # Car to Garden to Gate
-        self.collision_handler.add_line((2430, 1200), (2345, 1200)) # Car to Garden to Gate
-        self.collision_handler.add_line((2345, 1200), (2345, 1360)) # Car to Garden to Gate
-        self.collision_handler.add_line((2345, 1360), (3250, 1360)) # Car to Garden to Gate
-        self.collision_handler.add_line((2210, 1940), (3250, 1940)) # Lowerpart of Gate
-        self.collision_handler.add_line((3120, 1545), (3120, 1735))  # Middle gate
+        MapCollisionSetup.setup_collision_barriers(self.collision_handler)
 
     def go_back(self):
         if self.audio_manager:
