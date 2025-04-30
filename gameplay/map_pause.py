@@ -5,7 +5,7 @@ from ui.button import Button
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_PATH
 
 class Pause:
-    def __init__(self, screen, script_dir, audio_manager=None, scale=1, menu_callback=None):
+    def __init__(self, screen, script_dir, audio_manager=None, scale=1, map_callback=None):
         self.screen = screen
         self.script_dir = script_dir
         self.audio_manager = audio_manager
@@ -14,11 +14,11 @@ class Pause:
         self.pause_start_time = 0
         self.total_paused_time = 0
         self.show_confirmation = False
-        self.confirmation_type = None  # 'menu' only
+        self.confirmation_type = None  # 'map' only
         self.confirmation_buttons = []
 
-        # Callbacks for menu actions
-        self.menu_callback = menu_callback
+        # Callbacks for map actions
+        self.map_callback = map_callback
 
         # Load fonts
         self.font = pygame.font.Font(FONT_PATH, 50)
@@ -56,9 +56,9 @@ class Pause:
         """Initialize the pause menu icons"""
         icons = [
             {
-                "name": "menu",
+                "name": "map",
                 "pos": (SCREEN_WIDTH // 2 - 250, SCREEN_HEIGHT // 2 + 40),
-                "action": self.show_menu_confirmation
+                "action": self.show_map_confirmation
             },
             {
                 "name": "resume",
@@ -139,25 +139,23 @@ class Pause:
 
         self.confirmation_buttons.extend([yes_button, no_button])
 
-    def show_menu_confirmation(self):
-        """Show confirmation dialog for returning to menu"""
+    def show_map_confirmation(self):
+        """Show confirmation dialog for opening map"""
         self.show_confirmation = True
-        self.confirmation_type = 'menu'
+        self.confirmation_type = 'map'
         self.init_confirmation_buttons()
 
     def confirm_action(self):
         """Handle confirmation (Yes button click)"""
         print(f"Yes clicked for {self.confirmation_type}")
 
-        if self.confirmation_type == 'menu':
-            # Use menu callback if provided
-            print(f"Yes clicked for {self.confirmation_type}")
-            if self.menu_callback:
-                print("Calling menu callback")
-                self.menu_callback()  # Ensure this function is correctly defined
-                self.paused = False  # Unpause the game before returning to menu
+        if self.confirmation_type == 'map':
+            # Use map callback if provided
+            if self.map_callback:
+                print("Calling map callback")
+                self.map_callback()
             else:
-                print("No menu callback provided.")
+                print("No map callback provided.")
 
         # Cancel confirmation dialog
         self.cancel_confirmation()
@@ -191,9 +189,9 @@ class Pause:
                 self.total_paused_time += time.time() - self.pause_start_time
                 pygame.mixer.music.unpause()
 
-    def return_to_menu(self):
-        """Return to main menu function"""
-        print("Returning to menu...")
+    def open_map(self):
+        """Open map function"""
+        print("Opening map...")
         if self.audio_manager:
             self.audio_manager.play_sfx()
 

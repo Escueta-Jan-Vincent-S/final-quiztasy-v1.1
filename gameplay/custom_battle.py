@@ -56,15 +56,18 @@ class CustomBattle:
         self.message_timer = 0
         self.input_active = True
 
-        # Save the current map OST for restoration later
-        self.map_ost = self.get_map_ost_path()
+        # Save the current music path for restoration later
+        self.original_music = None
+        if pygame.mixer.music.get_busy():
+            # Store the path to menuOst.mp3 instead of determining by player type
+            self.original_music = os.path.join(self.script_dir, "assets", "audio", "ost", "menuOst.mp3")
+            print(f"Saved original music: {self.original_music}")
 
         # Initialize pause menu with specific callbacks
         self.pause_menu = Pause(
             screen,
             script_dir,
             audio_manager,
-            map_callback=self.open_map_from_pause,
             menu_callback=self.return_to_menu_from_pause
         )
 
@@ -104,11 +107,6 @@ class CustomBattle:
         else:
             print("No game instance")
 
-    def get_map_ost_path(self):
-        """Get the path to the map OST based on player type."""
-        return os.path.join(self.script_dir, "assets", "audio", "ost", self.player_type,
-                            f"{self.player_type}_map_ost.mp3")
-
     def load_battle_music(self):
         """Load the appropriate battle music based on the player type."""
         if self.player_type == "boy":
@@ -118,11 +116,16 @@ class CustomBattle:
         return None
 
     def stop_battle_music(self):
-        """Stop the battle music and restore map music."""
+        """Stop the battle music and restore the original music."""
         pygame.mixer.music.stop()
-        # Restore the map OST
-        pygame.mixer.music.load(self.map_ost)
-        pygame.mixer.music.play(-1)  # Loop the map music
+
+        # Restore the original music if it exists
+        if self.original_music and os.path.exists(self.original_music):
+            print(f"Restoring original music: {self.original_music}")
+            pygame.mixer.music.load(self.original_music)
+            pygame.mixer.music.play(-1)  # Loop the original music
+        else:
+            print("No original music to restore")
 
     def load_next_question(self):
         """Loads the next question from the custom question set"""
@@ -349,7 +352,7 @@ class CustomBattle:
             # Cap the frame rate
             self.clock.tick(FPS)
 
-        # Stop battle music and restore map music when the battle ends
+        # Stop battle music and restore original music when the battle ends
         self.stop_battle_music()
 
         # Return result (True for victory, False for defeat)

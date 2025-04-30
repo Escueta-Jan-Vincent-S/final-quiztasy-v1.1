@@ -5,7 +5,7 @@ from characters.player import Player
 from gameplay.questions import QuestionGenerator
 from managers.audio_manager import AudioManager
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, FONT_PATH
-from .pause import Pause
+from .map_pause import Pause
 
 class Battle:
     def __init__(self, screen, script_dir, level, player_type="boy", audio_manager=None, game_instance=None):
@@ -36,13 +36,11 @@ class Battle:
         self.player_type = player_type
         self.map_ost = self.get_map_ost_path()
 
-        # Initialize pause menu with specific callbacks
         self.pause_menu = Pause(
             screen,
             script_dir,
             audio_manager,
             map_callback=self.open_map_from_pause,
-            menu_callback=self.return_to_menu_from_pause
         )
 
         # Initialize first question
@@ -59,16 +57,6 @@ class Battle:
         # Implement logic to open map
         print("Opening map from pause menu")
         self.running = False  # End current battle
-
-    def return_to_menu_from_pause(self):
-        """Handle returning to main menu when selected from pause menu"""
-        print("Returning to main menu from pause menu")
-        self.running = False  # End current battle
-        if self.game_instance:
-            # Call the return_to_main_menu method instead of main_menu
-            self.game_instance.return_to_main_menu()
-        else:
-            print("No game instance")
 
     def get_map_ost_path(self):
         """Get the path to the map OST based on player type."""
