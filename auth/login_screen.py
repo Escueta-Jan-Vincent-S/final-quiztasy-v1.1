@@ -5,7 +5,6 @@ from .input_box import InputBox
 from ui.button import Button
 from .register_screen import RegisterScreen
 
-
 class LoginScreen:
     def __init__(self, screen, script_dir, auth_manager, audio_manager=None, on_close_callback=None):
         self.screen = screen
@@ -130,13 +129,11 @@ class LoginScreen:
             self.status_color = pygame.Color('red')
 
     def show_register(self):
-        # Hide login screen and show register screen
         self.visible = False
         self.register_screen.show()
         self.status_message = ""
 
     def show_login(self):
-        # Show login screen (called from register screen when going back)
         self.visible = True
 
     def close(self):
@@ -153,6 +150,7 @@ class LoginScreen:
     def show(self):
         self.visible = True
 
+        # FOR AUTO LOGIN REMOVE LATER
         if self.auto_login_data:
             self.input_boxes['email'].text = self.auto_login_data['email']
             self.input_boxes['password'].text = self.auto_login_data['password']

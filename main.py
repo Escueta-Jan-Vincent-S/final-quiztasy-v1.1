@@ -34,7 +34,7 @@ class FinalQuiztasy:
 
         self.game_manager.auth_manager = self.auth_manager
         # AUTO LOGIN REMOVE LATER
-        auto_email = "fq@gmail.com"
+        auto_email = "admin@gmail.com"
         auto_password = "12345678"
         success, message = self.auth_manager.login(auto_email, auto_password)
         if success:
