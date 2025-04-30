@@ -226,8 +226,15 @@ class MainMenu:
 
     def play_game(self):
         # Before checking login status, update button state
+        if not self.auth_manager:  # Check if auth_manager is available
+            print("DEBUG: AuthManager is not initialized.")
+            return
         self.update_login_button()
         current_user = self.auth_manager.get_current_user()
+        if not current_user:
+            print("DEBUG: No user is logged in. Please log in first.")
+            return
+
         if current_user:
             print(f"[DEBUG] User is logged in as: {current_user['email']}")
             # Proceed with game
