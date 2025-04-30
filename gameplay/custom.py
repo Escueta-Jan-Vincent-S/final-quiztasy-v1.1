@@ -4,6 +4,7 @@ import sys
 import datetime
 from managers.custom_manager import CustomManager
 from .custom_ui import CustomUI
+from .custom_battle import CustomBattle
 
 
 class CustomMode:
@@ -69,6 +70,11 @@ class CustomMode:
             self.ui.set_status("Please add at least one question before finishing", pygame.Color('red'))
             return
 
+        # Check if we have at least 10 questions for battle
+        if len(self.current_questions) < 10:
+            self.ui.set_status("You need at least 10 questions for a battle. Please add more.", pygame.Color('red'))
+            return
+
         # Generate a name based on current date/time
         current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         question_set_name = f"Questions - {current_date}"
@@ -130,6 +136,47 @@ class CustomMode:
                 # Show error message
                 self.ui.set_status("Failed to delete question set", pygame.Color('red'))
 
+    def start_battle(self):
+        """Start a battle with the currently selected question set."""
+        if self.selected_slot is None or self.selected_slot >= len(self.save_slots):
+            self.ui.set_status("Please select a question set first", pygame.Color('red'))
+            return
+
+        # Get the selected question set name
+        question_set_name = self.save_slots[self.selected_slot]
+        print(f"Starting battle with question set: {question_set_name}")
+
+        # Check if the question set has at least 10 questions
+        questions = self.custom_manager.get_question_set_by_name(question_set_name)
+        if not questions or len(questions) < 10:
+            self.ui.set_status(
+                f"Need at least 10 questions to battle. This set has {len(questions) if questions else 0}.",
+                pygame.Color('red'))
+            return
+
+        # Hide custom mode UI
+        self.visible = False
+
+        # Create and run the battle
+        custom_battle = CustomBattle(
+            self.screen,
+            self.script_dir,
+            question_set_name,
+            self.audio_manager,
+            self.game_instance
+        )
+
+        result = custom_battle.run()
+
+        # Show custom mode UI again after battle ends
+        self.visible = True
+
+        # Display battle result
+        if result:
+            self.ui.set_status("Battle Won! Congratulations!", pygame.Color('green'))
+        else:
+            self.ui.set_status("Battle Lost! Try again!", pygame.Color('red'))
+
     def remove_slot(self, slot_index):
         """Remove a save slot."""
         if 0 <= slot_index < len(self.save_slots):
@@ -177,6 +224,8 @@ class CustomMode:
                 self.delete_question_set(result["index"])
             elif result["action"] == "select_slot":
                 self.selected_slot = result["index"]
+            elif result["action"] == "start_battle":
+                self.start_battle()
 
     def draw(self):
         """Draw all UI elements."""

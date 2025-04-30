@@ -3,7 +3,8 @@ import os
 from ui.button import Button
 from ui.back_button import BackButton
 from auth.input_box import InputBox
-from settings import FONT_PATH, FONT_SIZE
+from settings import FONT_PATH, FONT_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH
+
 
 class CustomUI:
     def __init__(self, screen, audio_manager, script_dir, scale=0.5, custom_mode=None):
@@ -48,10 +49,23 @@ class CustomUI:
     def setup_ui_elements(self):
         """Initialize all UI elements"""
         # Create Button
-        create_btn_path = os.path.join(self.script_dir, "assets", "images", "buttons", "game modes", "custom", "createquestion_btn_img.png")
-        create_btn_hover_path = os.path.join(self.script_dir, "assets", "images", "buttons", "game modes", "custom", "createquestion_btn_hover.png")
+        create_btn_path = os.path.join(self.script_dir, "assets", "images", "buttons", "game modes", "custom",
+                                       "createquestion_btn_img.png")
+        create_btn_hover_path = os.path.join(self.script_dir, "assets", "images", "buttons", "game modes", "custom",
+                                             "createquestion_btn_hover.png")
 
-        self.create_button = Button(960, 875, create_btn_path, create_btn_hover_path, None, lambda: self.custom_mode.create_question(), scale=0.5, audio_manager=self.audio_manager)
+        self.create_button = Button(960, 875, create_btn_path, create_btn_hover_path, None,
+                                    lambda: self.custom_mode.create_question(), scale=0.5,
+                                    audio_manager=self.audio_manager)
+
+        # Start Battle Button
+        start_battle_btn_path = os.path.join(self.script_dir, "assets", "images", "buttons", "game modes", "custom", "enter_btn_img.png")
+        start_battle_btn_hover_path = os.path.join(self.script_dir, "assets", "images", "buttons", "game modes", "custom", "enter_btn_hover.png")
+
+        self.start_battle_button = Button(SCREEN_WIDTH / 2, 975, start_battle_btn_path, start_battle_btn_hover_path, None,
+                                          lambda: self.handle_start_battle(), scale=0.5,
+                                          audio_manager=self.audio_manager)
+
         # Back Button
         self.back_button = BackButton(self.screen, self.script_dir, lambda: self.custom_mode.go_back(), audio_manager=self.audio_manager, position=(100, 100), scale=0.25)
 
@@ -62,7 +76,8 @@ class CustomUI:
         self.input_border_rect = self.input_border.get_rect(center=(960, 500))
 
         # Input boxes for question and answer with updated parameters
-        self.question_input = InputBox(310, 290, 1300, 260, placeholder="Enter your question here...", align_top_left=True, multiline=True)
+        self.question_input = InputBox(310, 290, 1300, 260, placeholder="Enter your question here...",
+                                       align_top_left=True, multiline=True)
         self.answer_input = InputBox(310, 700, 1300, 120, placeholder="Enter the answer here...", align_top_left=True)
 
         # Next and Done buttons
@@ -71,8 +86,10 @@ class CustomUI:
         done_btn_path = os.path.join(self.script_dir, "assets", "images", "buttons", "game modes", "custom", "done_btn_img.png")
         done_btn_hover_path = os.path.join(self.script_dir, "assets", "images", "buttons", "game modes", "custom", "done_btn_hover.png")
 
-        self.next_button = Button(700, 950, next_btn_path, next_btn_hover_path, None, lambda: self.custom_mode.next_question(), scale=0.5, audio_manager=self.audio_manager)
-        self.done_button = Button(1200, 950, done_btn_path, done_btn_hover_path, None, lambda: self.custom_mode.done_creating(), scale=0.5, audio_manager=self.audio_manager)
+        self.next_button = Button(700, 950, next_btn_path, next_btn_hover_path, None,
+                                  lambda: self.custom_mode.next_question(), scale=0.5, audio_manager=self.audio_manager)
+        self.done_button = Button(1200, 950, done_btn_path, done_btn_hover_path, None,
+                                  lambda: self.custom_mode.done_creating(), scale=0.5, audio_manager=self.audio_manager)
 
         # Load X button for removing slots
         x_button_path = os.path.join(self.script_dir, "assets", "images", "buttons", "game modes", "custom", "x_button.png")
@@ -97,19 +114,20 @@ class CustomUI:
         # Track which X button is being hovered
         self.hovered_x_button = None
 
+    def handle_start_battle(self):
+        """Trigger start battle action"""
+        return {"action": "start_battle"}
+
     def create_x_button(self, color):
         """Create a simple X button surface"""
         size = 30
         surface = pygame.Surface((size, size), pygame.SRCALPHA)
 
-        # Draw X
         thickness = 4
         pygame.draw.line(surface, color, (5, 5), (size - 5, size - 5), thickness)
         pygame.draw.line(surface, color, (size - 5, 5), (5, size - 5), thickness)
 
-        # Draw circle border
         pygame.draw.circle(surface, color, (size // 2, size // 2), size // 2 - 1, 2)
-
         return surface
 
     def update_max_scroll(self, save_slots):
@@ -140,6 +158,13 @@ class CustomUI:
         else:
             # Update regular slot view
             self.create_button.update(event)
+
+            # Update start battle button if a slot is selected
+            if selected_slot is not None:
+                self.start_battle_button.update(event)
+                if self.start_battle_button.clicked:
+                    result = {"action": "start_battle"}
+                    self.start_battle_button.clicked = False
 
             # Handle mouse wheel scrolling
             if event.type == pygame.MOUSEWHEEL:
@@ -285,6 +310,10 @@ class CustomUI:
 
             # Draw create button
             self.create_button.draw(self.screen)
+
+            # Draw start battle button if slot is selected
+            if selected_slot is not None:
+                self.start_battle_button.draw(self.screen)
 
             # Draw status message if any
             if self.status_message:
