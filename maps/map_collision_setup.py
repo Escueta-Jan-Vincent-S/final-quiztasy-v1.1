@@ -74,6 +74,10 @@ class MapCollisionSetup:
         collision_handler.add_line((6150, 7280), (8190, 7280))  # Lower Barrier Mula Extension gang don
 
         # POOL
+        collision_handler.add_line((8230, 5965), (8230, 6330)) # Left Side ng pool
+        collision_handler.add_line((9200, 5965), (9200, 6330))  # Right Side ng pool
+        collision_handler.add_line((8230, 5965), (9200, 5965))  # Upper Side ng pool
+        collision_handler.add_line((8230, 6330), (9200, 6330))  # Lower Side ng pool
 
         # YUNG ANO THEATHER BAYUN
         collision_handler.add_line((6570, 5810), (6570, 6920)) # Left Side ng Theater
