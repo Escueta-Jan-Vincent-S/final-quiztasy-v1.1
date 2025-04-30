@@ -153,6 +153,10 @@ class LoginScreen:
     def show(self):
         self.visible = True
 
+        if self.auto_login_data:
+            self.input_boxes['email'].text = self.auto_login_data['email']
+            self.input_boxes['password'].text = self.auto_login_data['password']
+
     def handle_events(self, event):
         # First check if register screen is visible
         if self.register_screen.visible:

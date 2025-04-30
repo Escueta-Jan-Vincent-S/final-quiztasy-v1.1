@@ -9,6 +9,20 @@ class GameManager:
         self.user_preferences = {}
         self.game_stats = {}
 
+    # AUTO LOGIN REMOVE LATER
+        self.auth_manager = None
+        self.logged_in_user = None
+
+    def set_logged_in_user(self, user):
+        self.logged_in_user = user
+
+    def get_current_user(self):
+        return self.logged_in_user
+
+    def is_user_logged_in(self):
+        return self.logged_in_user is not None
+    # AUTO LOGIN REMOVE LATER
+
     def set_current_screen(self, screen_name):
         """Set the currently active screen"""
         self.current_screen = screen_name

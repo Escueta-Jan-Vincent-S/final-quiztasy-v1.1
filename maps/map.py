@@ -2,8 +2,9 @@ import pygame
 import os
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from ui.back_button import BackButton
-from .map_character_movement import MapCharacterMovement
 from ui.button import Button
+from .map_character_movement import MapCharacterMovement
+from .map_collision import MapCollisionHandler
 from managers.level_manager import Levels
 
 class Map:
@@ -14,6 +15,10 @@ class Map:
         self.running = True
         self.go_back_callback = go_back_callback  # Store the callback function
         self.audio_manager = audio_manager
+
+        # Initialize collision handler
+        self.collision_handler = MapCollisionHandler()
+        self.setup_map_collision_barriers()
 
         # Set the hero type (boy or girl)
         self.hero_type = hero_type if hero_type else "boy"  # Default to boy if not specified
@@ -95,6 +100,28 @@ class Map:
         # Create button - now using the levels_manager's enter_level method
         self.enter_button = Button(x=x, y=y, idle_img=idle_img, hover_img=hover_img, action=self.levels_manager.enter_level, scale=0.5, audio_manager=self.audio_manager)
 
+    def setup_map_collision_barriers(self):
+        """Set up collision barriers for the map."""
+        # Set character collision radius - adjust as needed based on your character size
+        self.collision_handler.set_character_collision_radius(50)
+
+        # Paths/roads boundaries
+        # Highway
+        self.collision_handler.add_line((1760, 300), (1760, 7500)) # V-Left Highway
+        self.collision_handler.add_line((2210, 300), (2210, 1020)) # V-Cutted Upper Right Highway
+        self.collision_handler.add_line((2210, 1940), (2210, 7500))  # V-Cutted Lower Right Highway
+        self.collision_handler.add_line((1760, 300), (2210, 300))  # H-Close Upper Highway
+        self.collision_handler.add_line((1760, 7500), (2210, 7500)) # H-Close Lower Highway
+        # Entrance
+        self.collision_handler.add_rectangle((2345, 1586.3), 750, 10)  # Garden Part Rectangle
+        self.collision_handler.add_line((2210, 1020), (2430, 1020)) # Car to Garden to Gate
+        self.collision_handler.add_line((2430, 1020), (2430, 1200)) # Car to Garden to Gate
+        self.collision_handler.add_line((2430, 1200), (2345, 1200)) # Car to Garden to Gate
+        self.collision_handler.add_line((2345, 1200), (2345, 1360)) # Car to Garden to Gate
+        self.collision_handler.add_line((2345, 1360), (3250, 1360)) # Car to Garden to Gate
+        self.collision_handler.add_line((2210, 1940), (3250, 1940)) # Lowerpart of Gate
+        self.collision_handler.add_line((3120, 1545), (3120, 1735))  # Middle gate
+
     def go_back(self):
         if self.audio_manager:
             self.audio_manager.play_sfx()  # Play sound effect when clicking back
@@ -113,15 +140,32 @@ class Map:
             'width': self.map_width,
             'height': self.map_height
         }
+
+        # Store current position before movement
+        prev_map_x, prev_map_y = self.map_x, self.map_y
+        prev_char_x, prev_char_y = self.character_movement.character_x, self.character_movement.character_y
+
         # Call the character movement handler
         map_adjustment, character_pos = self.character_movement.handle_movement(
             map_bounds,
             (self.map_x, self.map_y),
             (SCREEN_WIDTH, SCREEN_HEIGHT)
         )
-        # Update map position
-        self.map_x = map_adjustment[0]
-        self.map_y = map_adjustment[1]
+
+        # Calculate character's absolute position on the map
+        char_map_x = character_pos[0] - map_adjustment[0]
+        char_map_y = character_pos[1] - map_adjustment[1]
+
+        # Check collision with barriers
+        if self.collision_handler.check_collision((char_map_x, char_map_y)):
+            # If collision detected, revert to previous position
+            self.map_x, self.map_y = prev_map_x, prev_map_y
+            self.character_movement.character_x = prev_char_x
+            self.character_movement.character_y = prev_char_y
+        else:
+            # No collision, update map position
+            self.map_x, self.map_y = map_adjustment
+
         # Check for level proximity after movement
         self.check_level_proximity(character_pos)
 
@@ -160,15 +204,26 @@ class Map:
         """Draw the map, levels, and player icon on the screen."""
         self.screen.fill((0, 0, 0))
         self.screen.blit(self.map, (self.map_x, self.map_y))
+
         # Draw levels on the map using the levels manager
         self.levels_manager.draw_levels(self.screen, self.map_x, self.map_y)
+
+        # Draw collision lines for debugging
+        self.collision_handler.draw_lines(self.screen, self.map_x, self.map_y)
+
         # Draw character
         self.character_movement.draw(self.screen)
+
         # Draw enter button if it exists and is visible
         if self.enter_button and self.enter_button.visible:
             self.enter_button.draw(self.screen)
+
         # Draw back button
         self.back_button.draw()
+
+    def toggle_collision_debug(self):
+        """Toggle collision line visibility."""
+        self.collision_handler.set_debug_mode(not self.collision_handler.debug_mode)
 
     def handle_events(self):
         """Handle map interactions and level selection."""

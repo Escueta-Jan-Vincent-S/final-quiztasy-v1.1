@@ -28,11 +28,20 @@ class FinalQuiztasy:
             pygame.display.set_icon(window_icon)
 
         self.running = True
-        self.auth_manager = AuthManager()  # This is already a singleton
-        self.game_manager = GameManager()  # This is already a singleton
-        self.custom_manager = CustomManager()  # Now also a singleton
+        self.auth_manager = AuthManager()
+        self.game_manager = GameManager()
+        self.custom_manager = CustomManager()
 
         self.game_manager.auth_manager = self.auth_manager
+        # AUTO LOGIN REMOVE LATER
+        auto_email = "fq@gmail.com"
+        auto_password = "12345678"
+        success, message = self.auth_manager.login(auto_email, auto_password)
+        if success:
+            print("[Auto-Login] Success:", message)
+        else:
+            print("[Auto-Login] Failed:", message)
+        # AUTO LOGIN REMOVE LATER
 
         self.setup_background()
         self.setup_audio()
