@@ -31,7 +31,7 @@ class Pause:
 
         # Load pause border image
         border_path = os.path.join(script_dir, "assets", "images", "battle", "pause", "pause_border.png")
-        self.border_img = self.load_scaled_image(border_path, 0.5)
+        self.border_img = self.load_scaled_image(border_path, 0.4)
 
         # Load confirmation border image
         confirm_border_path = os.path.join(script_dir, "assets", "images", "battle", "pause", "confirmation", "yesorno_border.png")
@@ -57,12 +57,12 @@ class Pause:
         icons = [
             {
                 "name": "menu",
-                "pos": (SCREEN_WIDTH // 2 - 250, SCREEN_HEIGHT // 2 + 40),
+                "pos": (SCREEN_WIDTH // 2 - 125, SCREEN_HEIGHT // 2 + 40),
                 "action": self.show_menu_confirmation
             },
             {
                 "name": "resume",
-                "pos": (SCREEN_WIDTH // 2 + 250, SCREEN_HEIGHT // 2 + 40),
+                "pos": (SCREEN_WIDTH // 2 + 125, SCREEN_HEIGHT // 2 + 40),
                 "action": self.toggle_pause
             },
         ]

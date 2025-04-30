@@ -57,12 +57,12 @@ class Pause:
         icons = [
             {
                 "name": "map",
-                "pos": (SCREEN_WIDTH // 2 - 250, SCREEN_HEIGHT // 2 + 40),
+                "pos": (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 + 40),
                 "action": self.show_map_confirmation
             },
             {
                 "name": "resume",
-                "pos": (SCREEN_WIDTH // 2 + 250, SCREEN_HEIGHT // 2 + 40),
+                "pos": (SCREEN_WIDTH // 2 + 150, SCREEN_HEIGHT // 2 + 40),
                 "action": self.toggle_pause
             },
         ]
