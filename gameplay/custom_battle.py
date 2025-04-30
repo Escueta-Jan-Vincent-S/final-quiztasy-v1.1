@@ -201,7 +201,7 @@ class CustomBattle:
         else:
             # Wrong answer - player takes damage
             self.player.take_damage(1)  # Always 1 damage for simplicity
-            self.battle_message = f"Wrong! You take 1 damage! Correct answer: {correct_answer}"
+            self.battle_message = f"Wrong! You take 1 damage!"
 
             if self.player.hp <= 0:
                 self.battle_message = "Defeat! You have been defeated!"
