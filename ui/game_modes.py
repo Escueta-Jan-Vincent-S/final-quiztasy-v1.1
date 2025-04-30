@@ -79,9 +79,7 @@ class GameModes:
         if not self.auth_manager:  # Check if auth_manager is available
             print("DEBUG: AuthManager is not initialized.")
             return
-
         current_user = self.auth_manager.get_current_user()
-
         if not current_user:
             print("DEBUG: No user is logged in. Please log in first.")
             return
@@ -115,6 +113,14 @@ class GameModes:
 
     def play_custom_mode(self):
         print("Entering custom mode")
+        if not self.auth_manager:  # Check if auth_manager is available
+            print("DEBUG: AuthManager is not initialized.")
+            return
+        current_user = self.auth_manager.get_current_user()
+        if not current_user:
+            print("DEBUG: No user is logged in. Please log in first.")
+            return
+
         self.hide()  # Hide the game modes UI
 
         # Show the custom mode
@@ -169,7 +175,6 @@ class GameModes:
         if not self.continue_button.active:
             print("Continue button is locked - no saved progress")
             return
-
         print("Continuing previous game...")
         self.show_new_continue = False
 
@@ -192,8 +197,7 @@ class GameModes:
                 button.active = True
 
             # Get hero's OST path
-            hero_ost_path = os.path.join(self.game_instance.script_dir, "assets", "audio", "ost",
-                                         progress['hero_type'], f"{progress['hero_type']}_map_ost.mp3")
+            hero_ost_path = os.path.join(self.game_instance.script_dir, "assets", "audio", "ost", progress['hero_type'], f"{progress['hero_type']}_map_ost.mp3")
 
             # Load the map directly with the saved hero
             self.game_instance.map(hero_ost_path)
@@ -212,10 +216,8 @@ class GameModes:
 
         folder = "new or continue" if name in ["new", "continue"] else "modes"
         img_path = os.path.join(script_dir, "assets", "images", "buttons", "game modes", folder, f"{name}_btn_img.png")
-        hover_path = os.path.join(script_dir, "assets", "images", "buttons", "game modes", folder,
-                                  f"{name}_btn_hover.png")
-        click_path = None if folder == "modes" else os.path.join(script_dir, "assets", "images", "buttons",
-                                                                 "game modes", folder, f"{name}_btn_click.png")
+        hover_path = os.path.join(script_dir, "assets", "images", "buttons", "game modes", folder, f"{name}_btn_hover.png")
+        click_path = None if folder == "modes" else os.path.join(script_dir, "assets", "images", "buttons", "game modes", folder, f"{name}_btn_click.png")
 
         return Button(
             position[0], position[1], img_path, hover_path, click_path,

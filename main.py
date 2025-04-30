@@ -4,6 +4,7 @@ from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from managers.audio_manager import AudioManager
 from managers.auth_manager import AuthManager
 from managers.game_manager import GameManager
+from managers.custom_manager import CustomManager
 from ui.menu_background import MenuBackground
 from ui.main_menu import MainMenu
 from ui.game_modes import GameModes
@@ -21,26 +22,24 @@ class FinalQuiztasy:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption('Final Quiztasy')
 
-        # Set window icon
         icon_path = os.path.join(self.script_dir, "images", "logo", "logo.png")
         if os.path.exists(icon_path):
             window_icon = pygame.image.load(icon_path)
             pygame.display.set_icon(window_icon)
 
-        # Game state
         self.running = True
-        self.auth_manager = AuthManager()
-        self.game_manager = GameManager()
+        self.auth_manager = AuthManager()  # This is already a singleton
+        self.game_manager = GameManager()  # This is already a singleton
+        self.custom_manager = CustomManager()  # Now also a singleton
+
         self.game_manager.auth_manager = self.auth_manager
 
-        # Initialize game components
         self.setup_background()
         self.setup_audio()
         self.main_menu = MainMenu(self.screen, self.audio_manager, self.script_dir, exit_callback=self.exit_game, game_instance=self)
         self.hero_selection = HeroSelection(self, self.background_menu)
         self.pvp_hero_selection = PVPHeroSelection(self, self.background_menu)
 
-        # Pass game_manager instead of auth_manager to ensure consistent use of the singleton
         self.game_modes = GameModes(self.screen, self.audio_manager, self.script_dir, scale=1.0, game_instance=self, auth_manager=self.game_manager.auth_manager)
         self.custom_mode = CustomMode(self.screen, self.audio_manager, self.script_dir, game_instance=self)
         self.lspu_map = None
@@ -51,15 +50,13 @@ class FinalQuiztasy:
         self.clock = pygame.time.Clock()
 
     def setup_background(self):
-        # Initialize background video
         self.background_menu = MenuBackground(
             os.path.join(self.script_dir, "assets", "videos", "background", "backgroundMenu.mp4"), speed=0.3)
 
     def setup_audio(self):
-        # Initialize audio manager
         self.audio_manager = AudioManager(os.path.join(self.script_dir, "assets", "audio", "ost", "menuOst.mp3"),
-                                          os.path.join(self.script_dir, "assets", "audio", "sfx","click_sound_button.mp3"))
-        self.audio_manager.play_music()  # Play The OST Music
+                                          os.path.join(self.script_dir, "assets", "audio", "sfx", "click_sound_button.mp3"))
+        self.audio_manager.play_music()
 
     def exit_game(self):
         """Callback function to exit the game."""
@@ -70,11 +67,9 @@ class FinalQuiztasy:
         if not hasattr(self, "selected_hero") or not self.selected_hero:
             self.selected_hero = "boy"  # Default to boy if no hero was selected
 
-        # Stop the main menu music
         if self.audio_manager:
             self.audio_manager.stop_music()
 
-        # Update the AudioManager with the new OST instead of creating a new instance
         self.audio_manager.music_path = hero_ost_path
         if self.audio_manager.audio_enabled:
             self.audio_manager.play_music()
@@ -84,10 +79,7 @@ class FinalQuiztasy:
         self.hero_selection.hide()
         self.lspu_map.run()
 
-        # Stop hero-specific map music when exiting
         self.audio_manager.stop_music()
-
-        # Resume main menu music when returning
         self.audio_manager.music_path = os.path.join(self.script_dir, "assets", "audio", "ost", "menuOst.mp3")
         if self.audio_manager.audio_enabled:
             self.audio_manager.play_music()
@@ -100,9 +92,8 @@ class FinalQuiztasy:
     def return_to_main_menu(self):
         """Callback function to return to the main menu."""
         print("Switching to main menu")
-        self.running_map = False  # Stop map loop if it's running
-        self.main_menu.show()  # Ensure the main menu appears
-        # Also make sure to reset any necessary states
+        self.running_map = False
+        self.main_menu.show()
         if hasattr(self, 'lspu_map'):
             self.lspu_map = None
         if hasattr(self, 'battle'):
@@ -129,11 +120,28 @@ class FinalQuiztasy:
         """Log out the current user"""
         return self.game_manager.logout_user()
 
+    def save_question_set(self, name, questions):
+        """Save a question set, associating with current user if logged in"""
+        user_id = None
+        if self.is_user_logged_in():
+            current_user = self.get_current_user()
+            if current_user:
+                user_id = current_user.get('id')
+        return self.custom_manager.save_question_set(name, questions, user_id)
+
+    def get_question_sets(self):
+        """Get question sets for current user if logged in, or public sets if not"""
+        user_id = None
+        if self.is_user_logged_in():
+            current_user = self.get_current_user()
+            if current_user:
+                user_id = current_user.get('id')
+        return self.custom_manager.get_question_sets(user_id)
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            # Pass events to the appropriate screen based on visibility
             if hasattr(self, 'hero_selection') and self.hero_selection.visible:
                 self.hero_selection.update(event)
             elif hasattr(self, 'pvp_hero_selection') and self.pvp_hero_selection.visible:
@@ -146,12 +154,10 @@ class FinalQuiztasy:
                 self.main_menu.handle_events(event)
 
     def draw(self):
-        # Draw background
         frame_surface = self.background_menu.get_frame()
         frame_surface = pygame.transform.scale(frame_surface, (SCREEN_WIDTH, SCREEN_HEIGHT))
         self.screen.blit(frame_surface, (0, 0))
 
-        # Draw the appropriate UI screen based on visibility
         if hasattr(self, 'hero_selection') and self.hero_selection.visible:
             self.hero_selection.draw()
         elif hasattr(self, 'pvp_hero_selection') and self.pvp_hero_selection.visible:
@@ -173,7 +179,6 @@ class FinalQuiztasy:
         # Clean up resources
         self.background_menu.close()
         pygame.quit()
-
 
 if __name__ == "__main__":
     game = FinalQuiztasy()

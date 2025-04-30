@@ -5,6 +5,7 @@ import datetime
 from managers.custom_manager import CustomManager
 from .custom_ui import CustomUI
 
+
 class CustomMode:
     def __init__(self, screen, audio_manager, script_dir, scale=0.5, game_instance=None):
         self.game_instance = game_instance
@@ -25,8 +26,9 @@ class CustomMode:
         # Create UI
         self.ui = CustomUI(screen, audio_manager, script_dir, scale, self)
 
-        # Initialize custom manager
+        # Get the CustomManager singleton instance
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from managers.custom_manager import CustomManager
         self.custom_manager = CustomManager()
 
     def create_question(self):
@@ -71,11 +73,31 @@ class CustomMode:
         current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         question_set_name = f"Questions - {current_date}"
 
-        # Save to database via custom manager
-        self.custom_manager.save_question_set(question_set_name, self.current_questions)
+        # Use game instance's save_question_set method for consistent user handling
+        if self.game_instance and hasattr(self.game_instance, 'save_question_set'):
+            self.game_instance.save_question_set(question_set_name, self.current_questions)
+            print(f"Saved question set via game instance")
+        else:
+            # Fallback to direct database save if game instance method not available
+            user_id = None
+            if self.game_instance and hasattr(self.game_instance, 'get_current_user'):
+                current_user = self.game_instance.get_current_user()
+                if current_user:
+                    user_id = current_user.get('id')
+                    print(f"Saving questions for user ID: {user_id}")
+            self.custom_manager.save_question_set(question_set_name, self.current_questions, user_id)
 
-        # Update slot list
-        self.save_slots = self.custom_manager.get_question_sets()
+        # Update slot list using game instance method if available
+        if self.game_instance and hasattr(self.game_instance, 'get_question_sets'):
+            self.save_slots = self.game_instance.get_question_sets()
+        else:
+            # Fallback to direct database query if game instance method not available
+            user_id = None
+            if self.game_instance and hasattr(self.game_instance, 'get_current_user'):
+                current_user = self.game_instance.get_current_user()
+                if current_user:
+                    user_id = current_user.get('id')
+            self.save_slots = self.custom_manager.get_question_sets(user_id)
         self.ui.update_max_scroll(self.save_slots)
 
         self.ui.set_status(f"Saved {len(self.current_questions)} questions as '{question_set_name}'",
@@ -90,10 +112,12 @@ class CustomMode:
             slot_name = self.save_slots[slot_index]
             print(f"Deleting question set: {slot_name}")
 
-            # Get user_id from game_instance if available
-            user_id = None
-            if self.game_instance and hasattr(self.game_instance, 'current_user') and self.game_instance.current_user:
-                user_id = self.game_instance.current_user.get('id')
+            # Get user ID and delete the question set
+            if self.game_instance and hasattr(self.game_instance, 'get_current_user'):
+                current_user = self.game_instance.get_current_user()
+                user_id = current_user.get('id') if current_user else None
+            else:
+                user_id = None
 
             # Delete from database
             if self.custom_manager.delete_question_set(slot_name, user_id):
@@ -164,8 +188,18 @@ class CustomMode:
     def show(self):
         """Show the custom mode screen."""
         self.visible = True
-        # Load question sets from database
-        self.save_slots = self.custom_manager.get_question_sets()
+
+        # Use game instance's get_question_sets method for consistent user handling
+        if self.game_instance and hasattr(self.game_instance, 'get_question_sets'):
+            self.save_slots = self.game_instance.get_question_sets()
+        else:
+            # Fallback to direct database query if game instance method not available
+            user_id = None
+            if self.game_instance and hasattr(self.game_instance, 'get_current_user'):
+                current_user = self.game_instance.get_current_user()
+                if current_user:
+                    user_id = current_user.get('id')
+            self.save_slots = self.custom_manager.get_question_sets(user_id)
         self.ui.update_max_scroll(self.save_slots)
         self.ui.show()
 
