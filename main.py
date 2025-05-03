@@ -27,6 +27,14 @@ class FinalQuiztasy:
             window_icon = pygame.image.load(icon_path)
             pygame.display.set_icon(window_icon)
 
+        # Cursor
+        pygame.mouse.set_visible(False)
+        cursor_path = os.path.join(self.script_dir, "assets", "images", "others", "pencil_cursor.png")
+        original_cursor = pygame.image.load(cursor_path).convert_alpha()
+        scale_factor = 0.25
+        new_size = (int(original_cursor.get_width() * scale_factor), int(original_cursor.get_height() * scale_factor))
+        self.custom_cursor = pygame.transform.scale(original_cursor, new_size)
+
         self.running = True
         self.auth_manager = AuthManager()
         self.game_manager = GameManager()
@@ -177,6 +185,10 @@ class FinalQuiztasy:
             self.game_modes.draw()
         else:
             self.main_menu.draw()
+
+        # Draw Mouse Cursor
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        self.screen.blit(self.custom_cursor, (mouse_x, mouse_y))
 
     def run(self):
         # Main game loop

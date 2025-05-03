@@ -17,6 +17,14 @@ class Map:
         self.go_back_callback = go_back_callback  # Store the callback function
         self.audio_manager = audio_manager
 
+        # Cursor
+        pygame.mouse.set_visible(False)
+        cursor_path = os.path.join(self.script_dir, "assets", "images", "others", "pencil_cursor.png")
+        original_cursor = pygame.image.load(cursor_path).convert_alpha()
+        scale_factor = 0.25
+        new_size = (int(original_cursor.get_width() * scale_factor), int(original_cursor.get_height() * scale_factor))
+        self.custom_cursor = pygame.transform.scale(original_cursor, new_size)
+
         # Initialize collision handler
         self.collision_handler = MapCollisionHandler()
         self.setup_map_collision_barriers()
@@ -202,6 +210,9 @@ class Map:
 
         # Draw back button
         self.back_button.draw()
+
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        self.screen.blit(self.custom_cursor, (mouse_x, mouse_y))
 
     def toggle_collision_debug(self):
         """Toggle collision line visibility."""
