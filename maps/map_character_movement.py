@@ -2,6 +2,7 @@ import pygame
 import sys
 import os
 
+
 class MapCharacterMovement:
     def __init__(self, hero_type, script_dir, initial_x, initial_y):
         """Initialize character movement and animations."""
@@ -11,7 +12,7 @@ class MapCharacterMovement:
         # Character position
         self.character_x = initial_x
         self.character_y = initial_y
-        self.character_speed = 9 # 9 normal
+        self.character_speed = 9  # 9 normal
 
         # Animation properties
         self.direction = "front"  # Default direction is front
@@ -31,8 +32,8 @@ class MapCharacterMovement:
         self.animations = {
             "back": {"stand": None, "walk_left": None, "walk_right": None},
             "front": {"stand": None, "walk_left": None, "walk_right": None},
-            "left": {"stand": None, "walk": None},
-            "right": {"stand": None, "walk": None}
+            "left": {"stand": None, "walk_left": None, "walk_right": None},
+            "right": {"stand": None, "walk_left": None, "walk_right": None}
         }
 
         # Load back animations
@@ -57,20 +58,45 @@ class MapCharacterMovement:
             os.path.join(base_path, "front and walk", f"{self.hero_type}_front_walkr.png")
         ).convert_alpha()
 
-        # Load sideway animations
-        self.animations["left"]["stand"] = pygame.image.load(
-            os.path.join(base_path, "sideway and walk", f"{self.hero_type}_left_stand.png")
-        ).convert_alpha()
-        self.animations["left"]["walk"] = pygame.image.load(
-            os.path.join(base_path, "sideway and walk", f"{self.hero_type}_left_walk.png")
-        ).convert_alpha()
+        # Load sideway animations - with enhanced boy animations
+        if self.hero_type == "boy":
+            # Enhanced animations for boy character
+            self.animations["left"]["stand"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_left_stand.png")
+            ).convert_alpha()
+            self.animations["left"]["walk_left"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_leftl_walk.png")
+            ).convert_alpha()
+            self.animations["left"]["walk_right"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_leftr_walk.png")
+            ).convert_alpha()
 
-        self.animations["right"]["stand"] = pygame.image.load(
-            os.path.join(base_path, "sideway and walk", f"{self.hero_type}_right_stand.png")
-        ).convert_alpha()
-        self.animations["right"]["walk"] = pygame.image.load(
-            os.path.join(base_path, "sideway and walk", f"{self.hero_type}_right_walk.png")
-        ).convert_alpha()
+            self.animations["right"]["stand"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_right_stand.png")
+            ).convert_alpha()
+            self.animations["right"]["walk_left"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_rightl_walk.png")
+            ).convert_alpha()
+            self.animations["right"]["walk_right"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_rightr_walk.png")
+            ).convert_alpha()
+        else:
+            # Default animations for other characters
+            self.animations["left"]["stand"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_left_stand.png")
+            ).convert_alpha()
+            self.animations["left"]["walk_left"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_left_walk.png")
+            ).convert_alpha()
+            self.animations["left"]["walk_right"] = self.animations["left"]["stand"]  # For girl, stand is walk_right
+
+            self.animations["right"]["stand"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_right_stand.png")
+            ).convert_alpha()
+            self.animations["right"]["walk_left"] = pygame.image.load(
+                os.path.join(base_path, "sideway and walk", f"{self.hero_type}_right_walk.png")
+            ).convert_alpha()
+            self.animations["right"]["walk_right"] = self.animations["right"]["stand"]  # For girl, stand is walk_right
 
         # Scale all animations to an appropriate size
         scale_factor = 2.5  # Adjust as needed 3 Last Time
@@ -85,41 +111,48 @@ class MapCharacterMovement:
 
     def update_animation(self):
         """Update character animation frame based on movement and direction."""
-        # Check if it's time to update the animation
         current_time = pygame.time.get_ticks()
-        if current_time - self.last_animation_update >= self.animation_cooldown:
+        animation_speed = self.animation_cooldown
+
+        # All animations now use the same speed for both boy and girl
+        if current_time - self.last_animation_update >= animation_speed:
             self.last_animation_update = current_time
             if self.is_walking:
-                self.animation_frame = (self.animation_frame + 1) % 2  # Toggle between 0 and 1
+                self.animation_frame = (self.animation_frame + 1) % 4  # Same 4-step cycle for both characters
             else:
-                self.animation_frame = 0  # Reset to standing frame
+                # When not walking, always reset to standing frame
+                self.animation_frame = 0
 
     def get_current_frame(self):
-        """Get the current animation frame based on direction and movement state."""
+        """Get the current animation frame based on character type and direction."""
+        # If not walking, always return standing position for both boy and girl
         if not self.is_walking:
-            # Return standing frame
-            if self.direction == "left":
-                return self.animations["left"]["stand"]
-            elif self.direction == "right":
-                return self.animations["right"]["stand"]
-            elif self.direction == "back":
-                return self.animations["back"]["stand"]
-            else:  # front
-                return self.animations["front"]["stand"]
+            return self.animations[self.direction]["stand"]
+
+        if self.hero_type == "boy":
+            # Boy animation cycle: walk_left, stand, walk_right, stand
+            frame_cycle = ["walk_left", "stand", "walk_right", "stand"]
+            key = frame_cycle[self.animation_frame % 4]
+            return self.animations[self.direction].get(key, self.animations[self.direction]["stand"])
         else:
-            # Return walking frame
-            if self.direction == "left":
-                return self.animations["left"]["walk"] if self.animation_frame == 1 else self.animations["left"][
-                    "stand"]
-            elif self.direction == "right":
-                return self.animations["right"]["walk"] if self.animation_frame == 1 else self.animations["right"][
-                    "stand"]
-            elif self.direction == "back":
-                frame = "walk_left" if self.animation_frame == 0 else "walk_right"
-                return self.animations["back"][frame]
-            else:  # front
-                frame = "walk_left" if self.animation_frame == 0 else "walk_right"
-                return self.animations["front"][frame]
+            # Girl animation cycle with very short stand time for sideways movement
+            if self.direction in ["left", "right"]:
+                # For sideways, we want walk frames to be most frequent
+                # Using custom cycle that minimizes stand time
+                frame_cycle = ["walk_left", "walk_left", "stand", "walk_right"]
+                key = frame_cycle[self.animation_frame % 4]
+
+                if key == "walk_left":
+                    return self.animations[self.direction]["walk_left"]
+                elif key == "walk_right":
+                    return self.animations[self.direction]["stand"]  # For girl, stand is used as walk_right
+                else:
+                    return self.animations[self.direction]["stand"]
+            else:
+                # For front/back directions, use normal cycle
+                frame_cycle = ["walk_left", "stand", "walk_right", "stand"]
+                key = frame_cycle[self.animation_frame % 4]
+                return self.animations[self.direction].get(key, self.animations[self.direction]["stand"])
 
     def handle_movement(self, map_bounds, map_pos, screen_size):
         # Unpack parameters
@@ -316,6 +349,9 @@ class MapCharacterMovement:
         if was_walking != self.is_walking:
             self.animation_frame = 0
             self.last_animation_update = pygame.time.get_ticks()
+        else:
+            # Update animation frames
+            self.update_animation()
 
         return (map_x, map_y), (self.character_x, self.character_y)
 
