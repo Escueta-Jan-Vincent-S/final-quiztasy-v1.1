@@ -15,10 +15,10 @@ class MapCharacterMovement:
         self.character_speed = 9  # 9 normal
 
         # Animation properties
-        self.direction = "front"  # Default direction is front
+        self.direction = "front"
         self.is_walking = False
         self.animation_frame = 0
-        self.animation_cooldown = 100  # Milliseconds between animation frames
+        self.animation_cooldown = 120
         self.last_animation_update = pygame.time.get_ticks()
 
         # Load character animations
@@ -114,7 +114,10 @@ class MapCharacterMovement:
         current_time = pygame.time.get_ticks()
         animation_speed = self.animation_cooldown
 
-        # All animations now use the same speed for both boy and girl
+        # Make sideways animation slightly faster for girl character
+        if self.hero_type != "boy" and self.direction in ["left", "right"]:
+            animation_speed = int(self.animation_cooldown * 0.50)
+
         if current_time - self.last_animation_update >= animation_speed:
             self.last_animation_update = current_time
             if self.is_walking:
