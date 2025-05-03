@@ -3,11 +3,15 @@ import os
 import random
 from settings import FONT_PATH
 
+
 class Enemy:
-    def __init__(self, script_dir, enemy_type="mini", level=1, hp=None, damage=None):
+    def __init__(self, script_dir, enemy_type="mini", level=1, hp=None, damage=None, enemy_range=None):
         self.script_dir = script_dir
         self.enemy_type = enemy_type
         self.level = level
+
+        # Default enemy range if not specified
+        self.enemy_range = enemy_range if enemy_range is not None else (1, 19)
 
         # HP and damage will be set by the level, but we provide defaults here
         self.hp = hp if hp is not None else 5  # Default HP
@@ -23,19 +27,32 @@ class Enemy:
         self.rect.bottom = 700  # Adjust this value as needed
 
     def load_image(self):
-        """Loads the appropriate enemy image based on type"""
+        """Loads the appropriate enemy image based on type and level"""
         if self.enemy_type == "mini":
-            # Randomly select one of the 19 mini-boss images
-            mini_id = random.randint(1, 19)
-            image_path = os.path.join(self.script_dir, "assets", "images", "battle", "enemy", "mini",f"mini_{mini_id}.png")
+            # Select an enemy image from the range specified for this level
+            min_id, max_id = self.enemy_range
+            mini_id = random.randint(min_id, max_id)
+
+            image_path = os.path.join(self.script_dir, "assets", "images", "battle", "enemy", "mini",
+                                      f"mini_{mini_id}.png")
+
+            # Check if the file exists, if not use a default enemy
+            if not os.path.exists(image_path):
+                image_path = os.path.join(self.script_dir, "assets", "images", "battle", "enemy", "mini", "mini_1.png")
+
         else:  # Boss type
             image_path = os.path.join(self.script_dir, "assets", "images", "battle", "enemy", "boss", "boss.png")
+
+            # Check if the boss image exists, if not use a default mini enemy
+            if not os.path.exists(image_path):
+                image_path = os.path.join(self.script_dir, "assets", "images", "battle", "enemy", "mini", "mini_1.png")
 
         self.image = pygame.image.load(image_path)
 
         # Scale image if needed
         scale_factor = 2.5  # Adjust based on your image size
-        self.image = pygame.transform.scale(self.image,(int(self.image.get_width() * scale_factor),int(self.image.get_height() * scale_factor)))
+        self.image = pygame.transform.scale(self.image, (int(self.image.get_width() * scale_factor),
+                                                         int(self.image.get_height() * scale_factor)))
         self.image = pygame.transform.flip(self.image, True, False)
 
     def take_damage(self, amount):
@@ -73,10 +90,10 @@ class Enemy:
 
 
 class MiniBoss(Enemy):
-    def __init__(self, script_dir, level=1, hp=None, damage=None):
-        super().__init__(script_dir, "mini", level, hp, damage)
+    def __init__(self, script_dir, level=1, hp=None, damage=None, enemy_range=None):
+        super().__init__(script_dir, "mini", level, hp, damage, enemy_range)
 
 
 class Boss(Enemy):
-    def __init__(self, script_dir, level=1, hp=None, damage=None):
-        super().__init__(script_dir, "boss", level, hp, damage)
+    def __init__(self, script_dir, level=1, hp=None, damage=None, enemy_range=None):
+        super().__init__(script_dir, "boss", level, hp, damage, enemy_range)
