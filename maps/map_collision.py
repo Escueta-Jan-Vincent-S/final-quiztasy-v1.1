@@ -52,8 +52,8 @@ class CollisionLine:
 class MapCollisionHandler:
     def __init__(self):
         self.collision_lines = []
-        self.debug_mode = True  # Set to False to hide collision lines
-        self.character_collision_radius = 20  # Default character collision radius
+        self.debug_mode = False  # Set to False to hide collision lines
+        self.character_collision_radius = 20
 
     def add_line(self, start_pos, end_pos, line_width=3):
         self.collision_lines.append(CollisionLine(start_pos, end_pos, line_width))
